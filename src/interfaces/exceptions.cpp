@@ -27,4 +27,8 @@ namespace asa
         : interface_error(t_interface, std::format(
                               "Attempted to execute '{}' on a closed interface",
                               std::move(t_attempted_action))) {}
+
+    interface_interaction_timeout::interface_interaction_timeout(
+        const std::string& t_what_action): interface_error(
+        nullptr, std::format("Interaction timedout: {}!", t_what_action)) {}
 }

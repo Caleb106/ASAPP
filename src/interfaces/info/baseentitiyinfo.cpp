@@ -19,7 +19,7 @@ namespace asa
     base_entity_info::base_entity_info()
     {
         for (int i = 0; i < gear_slots_.max_size(); i++) {
-            gear_slots_[i] = gear_slot(764 + (305 * (i > 2)), 178 + (93 * (i % 3)));
+            gear_slots_[i] = gear_slot(i, 764 + (305 * (i > 2)), 178 + (93 * (i % 3)));
         }
     }
 

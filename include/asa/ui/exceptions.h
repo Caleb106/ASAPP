@@ -45,4 +45,12 @@ namespace asa
         no_interface_open(std::string t_attempted_action,
                           const asainterface* t_interface);
     };
+
+    class interface_interaction_timeout final : public interface_error
+    {
+    public:
+        explicit interface_interaction_timeout(const std::string& t_what_action);
+    };
+
+
 }

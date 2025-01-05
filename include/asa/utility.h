@@ -2,7 +2,21 @@
 #include <chrono>
 #include <functional>
 #include <map>
+#include <fmt/format.h>
+
 #include "game/window.h"
+
+template <>
+struct fmt::formatter<std::chrono::milliseconds> {
+    constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const std::chrono::milliseconds& ms, FormatContext& ctx) {
+        return fmt::format_to(ctx.out(), "{}ms", ms.count());
+    }
+};
 
 namespace asa::utility
 {

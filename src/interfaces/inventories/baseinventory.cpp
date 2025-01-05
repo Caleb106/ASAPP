@@ -137,7 +137,7 @@ namespace asa
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < 6; j++) {
                 // the slots are offset by 93 on the x and y axis
-                const item_slot slot(origin.x + (j * 93), origin.y + (i * 93));
+                const item_slot slot(i, origin.x + (j * 93), origin.y + (i * 93));
 
                 // the current row is (row index * 6) + col index, image row = 1 and
                 // col = 4: (1 * 6) + 4 = 10, so we are at slot index 10 :)
@@ -204,15 +204,6 @@ namespace asa
         return *this;
     }
 
-    base_inventory& base_inventory::take_slot(const item_slot& slot)
-    {
-        if (!slot.is_hovered()) { select_slot(slot); }
-        do {
-            post_press(get_action_mapping("TransferItem"), 15ms);
-        } while (!utility::await([&slot]() -> bool { return !slot.is_hovered(); }, 5s));
-        return *this;
-    }
-
     base_inventory& base_inventory::close()
     {
         const auto start = std::chrono::system_clock::now();
@@ -234,20 +225,36 @@ namespace asa
     {
         assert_open(__func__);
 
+        const utility::stopwatch sw;
+        get_logger()->debug("Selecting slot {}..", slot.index);
+
+        // If hover check is requested, we need to move the mouse onto the item until it
+        // has the white borders appear around it.
         if (hovered_check) {
             do {
+                if (sw.timedout(15s)) {
+                    throw interface_interaction_timeout(
+                        std::format("Failed to hover slot {}", slot.index)
+                    );
+                }
                 const cv::Point location = utility::center_of(slot.area);
                 set_mouse_pos(location);
             } while (!utility::await([slot]() -> bool { return slot.is_hovered(); }, 2s));
         } else { set_mouse_pos(utility::center_of(slot.area)); }
 
         while (tooltip_check && !slot.get_tooltip()) {
+            if (sw.timedout(15s)) {
+                throw interface_interaction_timeout(
+                    std::format("Failed to get tooltip of slot {}", slot.index)
+                );
+            }
             if (get_user_setting<bool>("bEnableInventoryItemTooltips")) {
                 toggle_tooltips();
             }
             toggle_tooltips();
             checked_sleep(100ms);
         }
+        get_logger()->debug("Slot {} hovered ({} elapsed).", slot.index, sw.elapsed());
         return *this;
     }
 
@@ -277,34 +284,43 @@ namespace asa
 
     base_inventory& base_inventory::transfer_all(base_inventory* receiver)
     {
-        get_logger()->debug("Transferring all items...");
-        transfer_all_button_.press();
+        const utility::stopwatch sw;
+        std::function<bool()> validated = nullptr;
+
+        if (search_bar.has_text_entered(true)) {
+            // Check for the text entered state, if there is text entered then we can use
+            // that to validate if the transfer all has gone through (text will be gone)
+            get_logger()->debug("Transferring all with search bar validation.");
+            validated = [this] { return !search_bar.has_text_entered(); };
+        } else {
+            get_logger()->debug("Transferring all (no validation available)..");
+        }
+
+        do {
+            transfer_all_button_.press();
+        } while (!utility::await([validated] { return !validated || validated(); }, 3s));
         search_bar.set_text_cleared();
-        // TODO: Wait for the items to be transferred in a smart way
-        // Consider whether we have the receiver available or not.
+
+        get_logger()->debug("Transfer complete ({} elapsed).", sw.elapsed());
         return *this;
     }
 
-    base_inventory& base_inventory::transfer_all(const item& item,
-                                                 base_inventory* receiver)
+    base_inventory& base_inventory::transfer_all(const item& item, base_inventory* recv)
     {
         search_bar.search_for(item.get_name(), false);
-        checked_sleep(50ms);
-        transfer_all();
+        transfer_all(recv);
         return *this;
     }
 
-    base_inventory& base_inventory::transfer_all(const std::string& term,
-                                                 base_inventory* receiver)
+    base_inventory& base_inventory::transfer_all(const std::string& term, base_inventory* recv)
     {
         search_bar.search_for(term, false);
-        // checked_sleep(50ms);
-        transfer_all(receiver);
+        transfer_all(recv);
         return *this;
     }
 
     base_inventory& base_inventory::transfer(const item& item, const int stacks,
-                                             base_inventory* receiver,
+                                             base_inventory* recv,
                                              const bool search)
     {
         assert_open(__func__);
@@ -317,18 +333,40 @@ namespace asa
         int i = 0;
         while (const auto slot = find_item(item, search)) {
             if (i++ > stacks && stacks != 0) { break; }
-            take_slot(*slot);
+            transfer(*slot);
         }
         return *this;
     }
 
     base_inventory& base_inventory::transfer(const int32_t slot, base_inventory* receiver)
     {
-        assert_open(__func__);
-
-        return take_slot(slots[slot]);
+        return transfer(slots[slot], receiver);
     }
 
+    base_inventory& base_inventory::transfer(const item_slot& slot, base_inventory* recv)
+    {
+        assert_open(__func__);
+        get_logger()->debug("Transferring slot {}..", slot.index);
+        const utility::stopwatch sw;
+
+        // Hover the slot if it isnt already hovered, this will let us know whether we
+        // are good to transfer it and whether it has been transferred.
+        if (!slot.is_hovered()) { select_slot(slot); }
+
+        // Press T until the slot is no longer hovered, another item may move to that slot
+        // but it wont be "hovered" until the mouse is moved.
+        do {
+            if (sw.timedout(10s)) {
+                throw interface_interaction_timeout(
+                    std::format("Transferring slot {}", slot.index)
+                );
+            }
+            post_press(get_action_mapping("TransferItem"));
+        } while (!utility::await([&slot]() -> bool { return !slot.is_hovered(); }, 5s));
+
+        get_logger()->debug("Transfer complete ({} elapsed).", sw.elapsed());
+        return *this;
+    }
 
     base_inventory& base_inventory::transfer_rows(const item& item, const int rows)
     {
@@ -400,7 +438,7 @@ namespace asa
 
     void base_inventory::assert_open(std::string for_action) const
     {
-        if (!utility::await([this]() { return is_open(); }, std::chrono::seconds(5))) {
+        if (!utility::await([this] { return is_open(); }, 5s)) {
             throw no_interface_open(std::move(for_action), this);
         }
     }

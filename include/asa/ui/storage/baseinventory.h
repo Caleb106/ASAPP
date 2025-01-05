@@ -129,23 +129,6 @@ namespace asa
         [[maybe_unused]] base_inventory& popcorn_all(PopcornFlags = PopcornFlags_Default);
 
         /**
-         * @brief Takes the item located at a given slot.
-         * 
-         * @param slot The slot to take the item from.
-         */
-        [[maybe_unused]] base_inventory& take_slot(const item_slot& slot);
-
-        /**
-         * @brief Takes the item located at a given slot.
-         * 
-         * @param index The index of the slot to take the item from.
-         */
-        [[maybe_unused]] base_inventory& take_slot(const int index)
-        {
-            return take_slot(slots[index]);
-        }
-
-        /**
          * @brief Selects the given slot.
          * 
          * @param slot The slot to select.
@@ -192,6 +175,26 @@ namespace asa
         [[maybe_unused]] base_inventory& drop_all(const std::string& term);
 
         /**
+         * @brief Transfers n-items into another inventory.
+         *
+         * @param item The item to transfer.
+         * @param stacks The amount of stacks to transfer.
+         * @param receiver The receiving inventory (default nullptr).
+         * @param search Whether the item should be searched for (default true).
+         *
+         * @remarks The pointer to the receiving end may help to confirm transfers.
+         */
+        [[maybe_unused]] base_inventory& transfer(const item& item, int stacks = 1,
+                                                  base_inventory* receiver = nullptr,
+                                                  bool search = true);
+
+        [[maybe_unused]] base_inventory& transfer(int32_t slot,
+                                                  base_inventory* receiver = nullptr);
+
+        [[maybe_unused]] base_inventory& transfer(const item_slot& slot,
+                                                  base_inventory* recv = nullptr);
+
+        /**
          * @brief Transfers all items to another inventory.
          *
          * @param receiver A pointer to the receiving inventory (optional).
@@ -204,40 +207,23 @@ namespace asa
          * @brief Transfers all of a given item into another inventory.
          *
          * @param item The item to transfer all of.
-         * @param receiver A pointer to the receiving inventory (optional).
+         * @param recv A pointer to the receiving inventory (optional).
          *
          * @remarks The pointer to the receiving end may help to confirm transfers.
          */
         [[maybe_unused]] base_inventory& transfer_all(
-            const item& item, base_inventory* receiver = nullptr);
+            const item& item, base_inventory* recv = nullptr);
 
         /**
          * @brief Transfers all of a given item into another inventory.
          *
          * @param term The term to search and transfer all of.
-         * @param receiver A pointer to the receiving inventory (optional).
+         * @param recv A pointer to the receiving inventory (optional).
          *
          * @remarks The pointer to the receiving end may help to confirm transfers.
          */
         [[maybe_unused]] base_inventory& transfer_all(const std::string& term,
-                                                      base_inventory* receiver = nullptr);
-
-        /**
-         * @brief Transfers n-items into another inventory.
-         *
-         * @param item The item to transfer.
-         * @param stacks The amount of stacks to transfer.
-         * @param receiver The receiving end (default nullptr).
-         * @param search Whether the item should be searched for (default true).
-         *
-         * @remarks The pointer to the receiving end may help to confirm transfers.
-         */
-        [[maybe_unused]] base_inventory& transfer(const item& item, int stacks = 1,
-                                                  base_inventory* receiver = nullptr,
-                                                  bool search = true);
-
-        [[maybe_unused]] base_inventory& transfer(int32_t slot,
-                                                  base_inventory* receiver = nullptr);
+                                                      base_inventory* recv = nullptr);
 
         /**
          * @brief Transfers a given amount of rows of a given item.

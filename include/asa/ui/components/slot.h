@@ -8,8 +8,10 @@ namespace asa
     struct item_slot : interface_component
     {
     public:
-        item_slot() : item_slot(0, 0) {}
-        item_slot(const int t_x, const int t_y) : interface_component(t_x, t_y, 86, 87) {}
+        item_slot() : item_slot(0, 0, 0) {}
+
+        item_slot(const int32_t t_index, const int t_x, const int t_y)
+            : interface_component(t_x, t_y, 86, 87), index(t_index) {}
 
         /**
          * @brief Computes the rect of the stack size value for this slot.
@@ -118,6 +120,8 @@ namespace asa
          */
         bool get_item_durability(float& durability_out) const;
 
+        int32_t index;
+
     private:
         /**
          * @brief Contains the information that we have about an item in the slot without
@@ -139,7 +143,8 @@ namespace asa
             [[nodiscard]] bool matches(item_data::ItemType type) const;
         };
 
-        friend std::ostream& operator<<(std::ostream& os, const predetermination_result& d);
+        friend std::ostream& operator<<(std::ostream& os,
+                                        const predetermination_result& d);
 
     private:
         /**

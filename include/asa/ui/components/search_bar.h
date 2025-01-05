@@ -25,7 +25,7 @@ namespace asa
          * @remarks Takes up to 500ms to factor in the blinking cursor.
          *
          */
-        [[nodiscard]] bool has_text_entered();
+        [[nodiscard]] bool has_text_entered(bool from_state = false);
 
     protected:
         std::string last_searched_term = "";

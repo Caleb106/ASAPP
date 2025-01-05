@@ -11,8 +11,11 @@ namespace asa
         cv::Vec3b text_color{134, 234, 255};
     }
 
-    bool search_bar::has_text_entered()
+    bool search_bar::has_text_entered(const bool from_state)
     {
+        if (from_state) {
+            return text_entered;
+        }
 
         // keep track of a high and low count over the course of 500ms
         // to then evaluate the differences between them.
