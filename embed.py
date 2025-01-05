@@ -26,7 +26,7 @@ def conv_files(folder: pathlib.Path, stream: TextIOWrapper):
 
         stream.write("\n};\n")
 
-        channels: int = 4 if folder.parent == "items" else 3
+        channels: int = 4 if folder.parent.stem == "items" else 3
         stream.write(
             f"inline const cv::Mat {file.stem} = cv::Mat({height}, {width}, CV_8UC{channels}, (uchar*){file.stem}_data);\n"
         )
