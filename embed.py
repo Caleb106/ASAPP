@@ -13,7 +13,7 @@ def conv_files(folder: pathlib.Path, stream: TextIOWrapper):
             continue
         stream.write(f"inline constexpr uint8_t {file.stem}_data[] = {{\n")
 
-        if folder.parent != "items":
+        if folder.parent.stem != "items":
             image = cv2.imread(str(file))
         else:
             image = cv2.imread(str(file), cv2.IMREAD_UNCHANGED)
