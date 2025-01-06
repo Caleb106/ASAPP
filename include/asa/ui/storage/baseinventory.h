@@ -94,7 +94,7 @@ namespace asa
          *
          * @return Whether the counted amount was smaller than the max inventory page.
          */
-        bool count_stacks(const item& item, int& count_out, bool search = false);
+        bool count(const item& item, int& count_out, bool search = false);
 
         /**
          * @brief Finds the slot of a given item in the inventory.
@@ -122,6 +122,13 @@ namespace asa
          * \param num_slots How many slots to popcorn.
          */
         [[maybe_unused]] base_inventory& popcorn(int num_slots);
+
+        /**
+         * @brief Popcorns from the provided item from inventory for the provided duration.
+         *
+         */
+        [[maybe_unused]] base_inventory& popcorn(const std::string& term,
+                                                 std::chrono::seconds duration = 5s);
 
         /**
          * @brief Popcorns al items from the inventory. 

@@ -446,12 +446,19 @@ namespace asa
         reset_view_angles();
         is_crouched_ = false;
         is_proned_ = false;
+        position_ = bed.get_name();
     }
 
     void local_player::teleport_to(const teleporter& dst, const teleport_flags_t flags)
     {
-        static teleporter generic_teleporter("UNKNOWN SRC TELEPORTER");
         const auto start = std::chrono::system_clock::now();
+        static teleporter src("SRC TP");
+
+        if (position_ == dst.get_name()) {
+            get_logger()->info("Already at '{}', teleport skipped!", dst.get_name());
+            return;
+        }
+        get_logger()->info("Teleporting to '{}'!", dst.get_name());
 
         // While riding a mount, the only way we can teleport is the default option.
         if (is_riding_mount_ && !(flags & TeleportFlags_UseDefaultOption)) {
@@ -473,8 +480,8 @@ namespace asa
                                      5s));
         } else {
             set_pitch(90);
-            access(generic_teleporter);
-            generic_teleporter.get_interface()->go_to(dst.get_name());
+            access(src);
+            src.get_interface()->go_to(dst.get_name());
             utility::await([] { return !get_hud()->can_default_teleport(); }, 5s);
         }
 
@@ -484,6 +491,7 @@ namespace asa
         if (!pass_teleport_screen()) {
             throw teleport_failed(dst.get_name(), "Did not arrive at destination.");
         }
+        position_ = dst.get_name();
     }
 
     void local_player::get_off_bed()
@@ -571,8 +579,8 @@ namespace asa
 
     void local_player::turn_left(const int degrees, const std::chrono::milliseconds delay)
     {
-        turn(degrees, 0);
-        current_yaw_ = normalize_yaw(current_yaw_ - degrees);
+        turn(-degrees, 0);
+        current_yaw_ = normalize_yaw(current_yaw_ - (-degrees));
         checked_sleep(delay);
         get_logger()->debug("Player turned left {} to {}.", degrees, current_yaw_);
     }
@@ -608,6 +616,7 @@ namespace asa
         is_crouched_ = false;
         is_proned_ = false;
         is_riding_mount_ = false;
+        position_.clear();
     }
 
     local_player* get_local_player()

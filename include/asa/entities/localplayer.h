@@ -379,6 +379,7 @@ namespace asa
         static std::once_flag init_flag;
 
         std::chrono::system_clock::time_point last_jumped_;
+        std::string position_;
     };
 
     [[nodiscard]] local_player* get_local_player();

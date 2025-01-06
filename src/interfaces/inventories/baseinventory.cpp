@@ -96,7 +96,7 @@ namespace asa
                      item.get_inventory_icon_mask());
     }
 
-    bool base_inventory::count_stacks(const item& item, int& count_out, const bool search)
+    bool base_inventory::count(const item& item, int& count_out, const bool search)
     {
         assert_open(__func__);
 
@@ -180,6 +180,28 @@ namespace asa
             checked_sleep(100ms);
         }
 
+        return *this;
+    }
+
+    base_inventory& base_inventory::popcorn(const std::string& term, const std::chrono::seconds duration)
+    {
+        assert_open(__func__);
+        search_bar.search_for(term);
+
+        const utility::stopwatch sw;
+
+        while (!slots[0].is_empty() && !sw.timedout(duration)) {
+            post_down(get_action_mapping("DropItem"));
+            for (int i = 0; i < MAX_ITEMS_PER_PAGE; i++) {
+
+                // the slot we hit is empty, restart from start.
+                if (slots[i].is_empty() || sw.timedout(duration)) { break; }
+
+                set_mouse_pos(utility::center_of(slots[i].area));
+                post_down(get_action_mapping("DropItem"));
+            }
+        }
+        post_up(get_action_mapping("DropItem"));
         return *this;
     }
 
